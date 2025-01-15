@@ -6,10 +6,6 @@ class MatchController:
         self.round = round_
         self.match_menu = match_menu
 
-    def display_matches(self):
-        """Display all matches."""
-        self.match_menu.display_matches(self.round.matches)
-
     def update_scores(self):
         """Prompt the user to update scores for matches in the round."""
         print("\nUpdating scores for the current round...")
@@ -23,7 +19,7 @@ class MatchController:
                 try:
                     score1 = float(input(f"Enter the score for {match.player1} (0, 0.5, or 1): "))
                     score2 = float(input(f"Enter the score for {match.player2} (0, 0.5, or 1): "))
-
+                    print(type(score1))
                     # Validate that the total score is 1
                     if score1 + score2 == 1 and score1 in [0, 0.5, 1] and score2 in [0, 0.5, 1]:
                         match.score1 = score1

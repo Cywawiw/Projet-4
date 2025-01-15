@@ -2,7 +2,7 @@ class Player:
     """
     Model to represent a chess player.
     """
-    def __init__(self, first_name, last_name, birth_date, chess_id, score=0):
+    def __init__(self, first_name, last_name, birth_date, chess_id, score=0.0):
         self.first_name = first_name
         self.last_name = last_name
         self.birth_date = birth_date
@@ -32,5 +32,5 @@ class Player:
             last_name=data["last_name"],
             birth_date=data["birth_date"],
             chess_id=data["chess_id"],
-            score=data.get("score", 0),
+            score=data.get("score", 0.0),
         )

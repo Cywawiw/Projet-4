@@ -1,56 +1,51 @@
 from models.tournament import Tournament
 from tinydb import TinyDB, where
 import datetime
+from models.player import Player
 from controllers.player_controller import PlayerController
 
 class TournamentController:
     """
     Controller to manage tournament-related operations.
     """
-    def __init__(self, tournament_file="data/tournaments.json"):
+    def __init__(self, player_controller, tournament_file="data/tournaments.json"):
+        self.player_controller = player_controller
         self.db = TinyDB(tournament_file)
         self.tournaments_table = self.db.table("tournaments")
-        self.selected_tournament = None
 
     def add_tournament(self):
-        """Add a new tournament to the database."""
+        """Add a new tournament."""
         print("\nAdd a Tournament")
         name = input("Tournament Name: ")
         location = input("Location: ")
         start_date = input("Start Date (DD-MM-YYYY): ")
         end_date = input("End Date (DD-MM-YYYY): ")
         description = input("Description: ")
-
-        while True:
-            try:
-                num_rounds = int(input("Number of Rounds (default is 4): "))
-                if num_rounds < 1:
-                    raise ValueError("Number of rounds must be at least 1.")
-                break
-            except ValueError as e:
-                print(f"Invalid input: {e}")
-
-        player_controller = PlayerController()
-        players = player_controller.load_players()
-
-        if not players:
-            print("No players available. Cannot create a tournament.")
-            return
-
-        print("\nAvailable Players:")
-        for i, player in enumerate(players):
-            print(f"{i + 1}. {player.first_name} {player.last_name} (ID: {player.chess_id})")
-
-        selected_indices = input("Enter player numbers separated by commas: ").split(",")
-        try:
-            selected_players = [players[int(index) - 1].chess_id for index in selected_indices]
-        except (ValueError, IndexError):
-            print("Invalid selection. Aborting tournament creation.")
-            return
+        num_rounds = input("Number of Rounds (default is 4): ") or 4
 
         try:
             datetime.datetime.strptime(start_date, "%d-%m-%Y")
             datetime.datetime.strptime(end_date, "%d-%m-%Y")
+
+
+            players = self.player_controller.load_players()
+            if not players:
+                print("No players available. Please add players first.")
+                return
+
+            print("\nAvailable Players:")
+            for i, player in enumerate(players):
+                print(f"{i + 1}. {player.first_name} {player.last_name} (ID: {player.chess_id})")
+
+            player_indices = input("Enter player numbers separated by commas: ")
+            selected_players = [players[int(i) - 1] for i in player_indices.split(",")]
+
+
+            valid_players = [
+                player if isinstance(player, Player) else Player.from_dict(player.to_dict())
+                for player in selected_players
+            ]
+
 
             new_tournament = Tournament(
                 name=name,
@@ -58,21 +53,21 @@ class TournamentController:
                 start_date=start_date,
                 end_date=end_date,
                 description=description,
-                num_rounds=num_rounds,
-                players=selected_players
+                num_rounds=int(num_rounds),
+                players=valid_players
             )
             self.save_tournament(new_tournament)
-            print(f"Tournament '{new_tournament.name}' created successfully with {len(selected_players)} players.")
+            print(f"Tournament '{new_tournament.name}' added successfully with {len(valid_players)} players.")
         except ValueError:
-            print("Invalid date format. Please use DD-MM-YYYY.")
+            print("Invalid input. Please check the date formats and player numbers.")
 
     def save_tournament(self, tournament):
         """Save a tournament to the database."""
+        tournament_data = tournament.to_dict()
         self.tournaments_table.upsert(
-            tournament.to_dict(),
-            where('name') == tournament.name
+            tournament_data, where("name") == tournament.name
         )
-
+        print(f"Tournament '{tournament.name}' saved successfully.")
     def list_tournaments(self):
         """List all tournaments."""
         tournaments = self.tournaments_table.all()
@@ -88,11 +83,27 @@ class TournamentController:
         return [Tournament.from_dict(t) for t in tournaments_data]
 
     def select_tournament(self):
-        """Display available tournaments and allow user to select one."""
+        """Select a tournament from the database."""
         tournaments = self.load_tournaments()
         if not tournaments:
             print("No tournaments available.")
             return None
+
+        print("\nAvailable Tournaments:")
+        for i, tournament in enumerate(tournaments):
+            print(f"{i + 1}. {tournament.name} - {tournament.location} - Rounds: {len(tournament.rounds)}")
+
+        try:
+            choice = int(input("Select a tournament by number: ")) - 1
+            if 0 <= choice < len(tournaments):
+                selected_tournament = tournaments[choice]
+                print(f"Tournament '{selected_tournament.name}' selected.")
+                return selected_tournament
+            else:
+                print("Invalid choice.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+        return None
 
         print("Available Tournaments:")
         for i, t in enumerate(tournaments):

@@ -38,10 +38,10 @@ class TournamentMenu:
                     print("Invalid choice. Please try again.")
 
     def select_tournament(self):
-        """Call the controller's select_tournament method."""
-        tournament = self.tournament_controller.select_tournament()
-        if tournament:
-            self.round_controller.tournament = tournament
+        """Select a tournament and set it in the RoundController."""
+        selected_tournament = self.tournament_controller.select_tournament()
+        if selected_tournament:
+            self.round_controller.set_tournament(selected_tournament)
 
     def display_tournaments(self, tournaments):
         """Display a list of tournaments."""
