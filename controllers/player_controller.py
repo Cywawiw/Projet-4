@@ -2,13 +2,30 @@ from tinydb import TinyDB, Query
 from models.player import Player
 import datetime
 
+
 class PlayerController:
     """
     Controller to manage player-related operations.
     """
     def __init__(self, player_file="data/players.json"):
+        """
+        Initialize the PlayerController with a specified JSON file for storage.
+
+        Args:
+             player_file (str): Path to the JSON file storing player data.
+         """
         self.db = TinyDB(player_file)
         self.players_table = self.db.table("players")
+
+    def load_players(self):
+        """
+        Load all players from the database.
+
+        Returns:
+            list[Player]: A list of Player objects loaded from the database.
+        """
+        players_data = self.players_table.all()
+        return [Player.from_dict(p) for p in players_data]
 
     def add_player(self):
         """Handle the addition of a new player."""
@@ -25,13 +42,10 @@ class PlayerController:
         except ValueError:
             print("Invalid date format. Please use DD-MM-YYYY.")
 
-    def load_players(self):
-        """Load all players from the database."""
-        players_data = self.players_table.all()
-        return [Player.from_dict(p) for p in players_data]
-
     def list_players(self):
-        """Handle listing all players."""
+        """
+        Display all players sorted alphabetically by last name and first name.
+        """
         players = self.players_table.all()
         if not players:
             print("No players found.")

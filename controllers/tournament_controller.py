@@ -2,13 +2,20 @@ from models.tournament import Tournament
 from tinydb import TinyDB, where
 import datetime
 from models.player import Player
-from controllers.player_controller import PlayerController
+
 
 class TournamentController:
     """
     Controller to manage tournament-related operations.
     """
     def __init__(self, player_controller, tournament_file="data/tournaments.json"):
+        """
+        Initialize the TournamentController with player data and tournament storage.
+
+        Args:
+            player_controller (PlayerController): Controller for managing player-related operations.
+            tournament_file (str): Path to the JSON file storing tournament data.
+        """
         self.player_controller = player_controller
         self.db = TinyDB(tournament_file)
         self.tournaments_table = self.db.table("tournaments")
@@ -26,8 +33,6 @@ class TournamentController:
         try:
             datetime.datetime.strptime(start_date, "%d-%m-%Y")
             datetime.datetime.strptime(end_date, "%d-%m-%Y")
-
-
             players = self.player_controller.load_players()
             if not players:
                 print("No players available. Please add players first.")
@@ -39,14 +44,10 @@ class TournamentController:
 
             player_indices = input("Enter player numbers separated by commas: ")
             selected_players = [players[int(i) - 1] for i in player_indices.split(",")]
-
-
             valid_players = [
                 player if isinstance(player, Player) else Player.from_dict(player.to_dict())
                 for player in selected_players
             ]
-
-
             new_tournament = Tournament(
                 name=name,
                 location=location,
@@ -62,12 +63,18 @@ class TournamentController:
             print("Invalid input. Please check the date formats and player numbers.")
 
     def save_tournament(self, tournament):
-        """Save a tournament to the database."""
+        """
+        Save or update a tournament in the database.
+
+        Args:
+            tournament (Tournament): The tournament object to be saved.
+        """
         tournament_data = tournament.to_dict()
         self.tournaments_table.upsert(
             tournament_data, where("name") == tournament.name
         )
         print(f"Tournament '{tournament.name}' saved successfully.")
+
     def list_tournaments(self):
         """List all tournaments."""
         tournaments = self.tournaments_table.all()
@@ -78,31 +85,39 @@ class TournamentController:
                 print(f"{tournament['name']} - {tournament['location']} - Rounds: {tournament['num_rounds']}")
 
     def load_tournaments(self):
-        """Load all tournaments from the database."""
+        """
+        Load all tournaments from the database.
+
+        Returns:
+            list[Tournament]: A list of Tournament objects loaded from the database.
+        """
         tournaments_data = self.tournaments_table.all()
         return [Tournament.from_dict(t) for t in tournaments_data]
 
     def select_tournament(self):
-        """Select a tournament from the database."""
+        """
+        Allow the user to select a tournament from the list of saved tournaments.
+        """
         tournaments = self.load_tournaments()
         if not tournaments:
-            print("No tournaments available.")
+            print("No tournaments available. Please add a tournament first.")
             return None
 
         print("\nAvailable Tournaments:")
         for i, tournament in enumerate(tournaments):
-            print(f"{i + 1}. {tournament.name} - {tournament.location} - Rounds: {len(tournament.rounds)}")
+            print(f"{i + 1}. {tournament.name} ({tournament.start_date} - {tournament.end_date})")
 
         try:
             choice = int(input("Select a tournament by number: ")) - 1
             if 0 <= choice < len(tournaments):
-                selected_tournament = tournaments[choice]
-                print(f"Tournament '{selected_tournament.name}' selected.")
-                return selected_tournament
+                self.selected_tournament = tournaments[choice]
+                print(f"Tournament '{self.selected_tournament.name}' selected.")
+                return self.selected_tournament
             else:
-                print("Invalid choice.")
+                print("Invalid choice. Please try again.")
         except ValueError:
             print("Invalid input. Please enter a number.")
+
         return None
 
         print("Available Tournaments:")
@@ -120,6 +135,28 @@ class TournamentController:
         except ValueError:
             print("Please enter a valid number.")
         return None
+
+    def display_tournament_rankings(self):
+        """
+        Display the rankings of players in the currently selected tournament.
+        """
+        if not hasattr(self, 'selected_tournament') or not self.selected_tournament:
+            print("No tournament selected. Please select a tournament first.")
+            return
+
+        tournament = self.selected_tournament
+
+        # Sort players by score in descending order
+        sorted_players = sorted(
+            tournament.players,
+            key=lambda player: player.score,
+            reverse=True
+        )
+
+        print(f"\nRankings for Tournament '{tournament.name}':")
+        print("-" * 40)
+        for rank, player in enumerate(sorted_players, start=1):
+            print(f"{rank}. {player} - {player.score} points")
 
     def display_tournament_players(self):
         """Display the list of players for a specific tournament."""

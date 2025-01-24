@@ -5,14 +5,14 @@ from random import shuffle
 from datetime import datetime
 from models.match import Match
 
+
 class RoundController:
     """
     Controller to manage round-related operations.
     """
-    def __init__(self, tournament_controller, round_menu):
+    def __init__(self, tournament_controller):
         self.tournament_controller = tournament_controller
-        self.round_menu = round_menu  # Associer round_menu
-        self.tournament = None  # Initialiser comme None
+        self.tournament = None
 
     def set_tournament(self, tournament):
         """Set the current tournament."""
@@ -24,30 +24,33 @@ class RoundController:
             print("No tournament selected. Please select a tournament first.")
             return
 
-        # Vérifiez si le nombre maximal de rondes est atteint
+        # Check if the maximum number of rounds is reached
         if len(self.tournament.rounds) >= self.tournament.num_rounds:
             print(f"Maximum number of rounds ({self.tournament.num_rounds}) reached for this tournament.")
             return
 
         round_number = len(self.tournament.rounds) + 1
         round_name = f"Round {round_number}"
-
         print(f"Creating {round_name} for '{self.tournament.name}'...")
 
-        # Générer les appariements
+        # Generate pairings
         matches = self.generate_pairings()
         if not matches:
             print("No matches could be created. Check the tournament data.")
             return
 
-        # Créer et ajouter la ronde
-        new_round = Round(name=round_name, matches=matches)
+        # Create and add the round
+        new_round = Round(
+            name=round_name,
+            matches=matches,
+            start_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        )
         self.tournament.rounds.append(new_round)
         print(f"{round_name} created successfully.")
 
-        # Sauvegarder le tournoi via TournamentController
+        # Save the tournament immediately to persist the round
         self.tournament_controller.save_tournament(self.tournament)
-
+        print(f"{round_name} saved to the tournament.")
 
     def generate_pairings(self):
         """Generate player pairings for the current round."""
@@ -56,50 +59,46 @@ class RoundController:
             for player in self.tournament.players
         ]
 
-        # First round: Random shuffle
-        if len(self.tournament.rounds) == 0:
+        # Shuffle players for the first round; sort by score otherwise
+        if not self.tournament.rounds:
             print("First round: Shuffling players randomly...")
             shuffle(players)
-
-        # Subsequent rounds: Sort players by score descending
         else:
             print("Sorting players by their scores for pairings...")
-            try:
-                players = sorted(players, key=lambda player: player.score, reverse=True)
-            except AttributeError as e:
-                print(f"Error sorting players: {e}")
-                return []
+            players.sort(key=lambda player: player.score, reverse=True)
 
-        matches = []
-        used_players = set()
+        matches, used_players = [], set()
+        previous_matches = {
+            (match.player1, match.player2) for round_ in self.tournament.rounds for match in round_.matches
+        }
 
-        for i, player1 in enumerate(players):
+        # Create matches
+        for player1 in players:
             if player1 in used_players:
                 continue
-
-            for player2 in players[i + 1:]:
-                if player2 in used_players:
+            for player2 in players:
+                if player2 in used_players or player1 == player2:
                     continue
-
-                previous_matches = {
-                    (match.player1, match.player2) for round_ in self.tournament.rounds for match in round_.matches
-                }
                 if (player1, player2) not in previous_matches and (player2, player1) not in previous_matches:
                     matches.append(Match(player1, player2))
-                    used_players.add(player1)
-                    used_players.add(player2)
+                    used_players.update([player1, player2])
                     break
 
-        # Handle odd players
-        for player in players:
-            if player not in used_players:
-                matches.append(Match(player, None))
-                break
+        # Handle unmatched players
+        unmatched = [p for p in players if p not in used_players]
+        if unmatched:
+            print("Applying fallback pairing for unmatched players...")
+            while len(unmatched) > 1:
+                matches.append(Match(unmatched.pop(0), unmatched.pop(0)))
+            if unmatched:
+                print(f"Unmatched player remains without a partner: {unmatched[0]}")
 
         return matches
 
     def end_round(self):
-        """End the current round and update match scores."""
+        """
+        End the current round and update match scores.
+        """
         if not self.tournament or not self.tournament.rounds:
             print("No rounds available to end.")
             return
@@ -107,15 +106,15 @@ class RoundController:
         current_round = self.tournament.rounds[-1]
         print(f"Ending the round '{current_round.name}'...")
 
-        # Demander les scores des matchs
-        match_controller = MatchController(current_round, self.round_menu)
+        # Update scores for the current round
+        match_controller = MatchController(current_round)  # Remove match_menu if unused
         match_controller.update_scores()
 
-        # Marquer la ronde comme terminée
+        # Mark the round as completed
         current_round.end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"Round '{current_round.name}' ended and scores updated.")
 
-        # Sauvegarder le tournoi
+        # Save the tournament with updated round data
         self.tournament_controller.save_tournament(self.tournament)
 
     def display_rounds(self):
@@ -126,14 +125,14 @@ class RoundController:
 
         print(f"Rounds in tournament '{self.tournament.name}':")
         for round_ in self.tournament.rounds:
-            print(f"- {round_.name} (Start: {round_.start_time}, End: {round_.end_time or 'Ongoing'})")
+            print(f"- {round_.name} (Start: {round_.start_time or 'Unknown'}, End: {round_.end_time or 'Ongoing'})")
             for match in round_.matches:
+                # Ensure player1 is a Player instance
                 player1 = match.player1 if isinstance(match.player1, Player) else Player.from_dict(match.player1)
-                player2 = match.player2 if isinstance(match.player2, Player) else Player.from_dict(match.player2)
-                print(f"  Match: {player1} vs {player2} | Scores: {match.score1} - {match.score2}")
 
-        print(f"Rounds in tournament '{self.tournament.name}':")
-        for round_ in self.tournament.rounds:
-            print(f"- {round_.name} (Start: {round_.start_time}, End: {round_.end_time or 'Ongoing'})")
-            for match in round_.matches:
-                print(f"  Match: {match.player1} vs {match.player2} | Scores: {match.score1} - {match.score2}")
+                # Handle None for player2
+                if match.player2 is None:
+                    print(f"  Match: {player1} vs [No Opponent] | Scores: {match.score1} - {match.score2}")
+                else:
+                    player2 = match.player2 if isinstance(match.player2, Player) else Player.from_dict(match.player2)
+                    print(f"  Match: {player1} vs {player2} | Scores: {match.score1} - {match.score2}")

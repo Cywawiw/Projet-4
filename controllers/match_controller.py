@@ -1,32 +1,47 @@
 class MatchController:
     """
-    Controller to manage matches in a round.
+    Controller for handling match operations within a round.
     """
-    def __init__(self, round_, match_menu):
-        self.round = round_
-        self.match_menu = match_menu
+    def __init__(self, current_round):
+        """
+        Initialize MatchController with the current round.
+
+        Args:
+            current_round (Round): The round containing the matches.
+        """
+        self.current_round = current_round
 
     def update_scores(self):
-        """Prompt the user to update scores for matches in the round."""
-        print("\nUpdating scores for the current round...")
-        for match in self.round.matches:
-            if not match.player2:
-                print(f"{match.player1} has no opponent in this match.")
-                continue
+        """
+        Update scores for each match in the current round.
+        """
+        for match in self.current_round.matches:
+            if match.player1 and match.player2:
+                print(f"Match: {match.player1} vs {match.player2}")
 
-            print(f"Match: {match.player1} vs {match.player2}")
-            while True:  # Repeat until valid scores are entered
+                # Input scores for each player
                 try:
-                    score1 = float(input(f"Enter the score for {match.player1} (0, 0.5, or 1): "))
-                    score2 = float(input(f"Enter the score for {match.player2} (0, 0.5, or 1): "))
-                    print(type(score1))
-                    # Validate that the total score is 1
-                    if score1 + score2 == 1 and score1 in [0, 0.5, 1] and score2 in [0, 0.5, 1]:
-                        match.score1 = score1
-                        match.score2 = score2
-                        print(f"Scores updated: {match.player1} ({score1}) - {match.player2} ({score2})")
-                        break  # Exit the loop if scores are valid
-                    else:
-                        print("Invalid scores. The total score must equal 1. Please try again.")
+                    score1 = float(input(f"Enter the score for {match.player1} (0, 0.5, or 1): ").strip())
+                    score2 = float(input(f"Enter the score for {match.player2} (0, 0.5, or 1): ").strip())
                 except ValueError:
-                    print("Invalid input. Please enter numeric values (0, 0.5, or 1).")
+                    print("Invalid input. Please enter 0, 0.5, or 1.")
+                    continue
+
+                # Validate total match score
+                if score1 + score2 != 1.0:
+                    print("Invalid match score: Total must equal 1.0. Try again.")
+                    continue
+
+                # Assign scores to the match
+                match.score1 = score1
+                match.score2 = score2
+
+                # Update players' scores
+                match.player1.score += score1
+                match.player2.score += score2
+
+                print(
+                    f"Scores updated:"
+                    f" {match.player1} ({match.player1.score}) - {match.player2} ({match.player2.score})")
+            else:
+                print("Skipping match with missing player.")

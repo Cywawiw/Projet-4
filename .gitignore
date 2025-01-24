@@ -1,3 +1,6 @@
-# Ignorer l'environnement virtuel
-venv/
+# Environnements virtuels
+.venv/
 env/
+venv/
+
+

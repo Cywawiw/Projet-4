@@ -1,11 +1,13 @@
 from models.round import Round
 from models.player import Player
 
+
 class Tournament:
     """
     Model to represent a chess tournament.
     """
-    def __init__(self, name, location, start_date, end_date, description, num_rounds=4, players=None, rounds=None, current_round=0):
+    def __init__(self, name, location, start_date, end_date, description, num_rounds=4,
+                 players=None, rounds=None, current_round=0):
         self.name = name
         self.location = location
         self.start_date = start_date
@@ -33,15 +35,13 @@ class Tournament:
     @staticmethod
     def from_dict(data):
         """Create a tournament object from a dictionary."""
-        tournament = Tournament(
+        return Tournament(
             name=data["name"],
             location=data["location"],
             start_date=data["start_date"],
             end_date=data["end_date"],
-            description=data["description"],
-            num_rounds=data.get("num_rounds", 4),
-            players=[Player.from_dict(p) for p in data.get("players", [])],
+            num_rounds=data["num_rounds"],
+            players=[Player.from_dict(p) for p in data["players"]],  # Deserialize players
             rounds=[Round.from_dict(r) for r in data.get("rounds", [])],
-            current_round=data.get("current_round", 0)
+            description=data["description"]
         )
-        return tournament
