@@ -1,10 +1,10 @@
 class MatchController:
     """
-    Controller for handling match operations within a round.
+    Controller for managing match operations within a round.
     """
     def __init__(self, current_round):
         """
-        Initialize MatchController with the current round.
+        Initialize the MatchController with the current round.
 
         Args:
             current_round (Round): The round containing the matches.

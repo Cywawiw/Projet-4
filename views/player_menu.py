@@ -1,7 +1,3 @@
-"""
-Menu for managing players in the chess tournament application.
-"""
-
 from rich.console import Console
 from rich.table import Table
 
@@ -10,23 +6,21 @@ class PlayerMenu:
     """
     Menu interface for managing players.
     """
-
     def __init__(self, player_controller):
         """
         Initialize the PlayerMenu with the player controller.
 
         Args:
-            player_controller (PlayerController): Controller for managing players.
+            player_controller (PlayerController): Controller for player operations.
         """
         self.player_controller = player_controller
         self.console = Console()
 
     def display_menu(self):
         """
-        Display the player management menu and handle user navigation.
+        Display the player menu options.
         """
         while True:
-            # Display the player menu with Rich library for better visuals
             self.console.print("[bold cyan]Player Menu[/bold cyan]")
             table = Table(title="Player Management")
             table.add_column("Option", justify="center")
@@ -49,4 +43,4 @@ class PlayerMenu:
                 case "4":
                     break
                 case _:
-                    print("Invalid choice. Please try again.")
+                    self.console.print("[red]Invalid choice. Please try again.[/red]")

@@ -9,6 +9,10 @@ from views.main_menu import MainMenu
 from views.report_menu import ReportMenu
 
 if __name__ == "__main__":
+    """
+    Main execution block of the application.
+    Initializes all controllers and menus, and starts the main menu loop.
+    """
     player_controller = PlayerController()
     tournament_controller = TournamentController(player_controller)
     round_controller = RoundController(tournament_controller)

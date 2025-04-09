@@ -17,8 +17,8 @@ This is a Python-based application to manage chess tournaments. It follows the *
 
 ### 1. Clone the repository
 ```bash
-git clone <repository_url>
-cd <repository_directory>
+git clone <https://github.com/Cywawiw/Projet-4>
+cd <Projet-4>
 ```
 ### 2. Create and activate a virtual environment
 ```bash

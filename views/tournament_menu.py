@@ -4,15 +4,24 @@ from rich.table import Table
 
 class TournamentMenu:
     """
-    View to display the tournament menu and handle user interactions.
+    Menu interface for managing tournaments.
     """
     def __init__(self, tournament_controller, round_controller):
+        """
+        Initialize the TournamentMenu with the necessary controllers.
+
+        Args:
+            tournament_controller (TournamentController): Controller for tournament operations.
+            round_controller (RoundController): Controller for round operations within tournaments.
+        """
         self.tournament_controller = tournament_controller
         self.round_controller = round_controller
         self.console = Console()
 
     def display_menu(self):
-        """Display the tournament menu options."""
+        """
+        Display the tournament menu options.
+        """
         while True:
             self.console.print("[bold cyan]Tournament Menu[/bold cyan]")
             table = Table(title="Tournament Management")
@@ -24,7 +33,7 @@ class TournamentMenu:
             table.add_row("4", "Create a Round")
             table.add_row("5", "End Current Round")
             table.add_row("6", "Display Rounds")
-            table.add_row("7", "Display Rankings")
+            table.add_row("7", "Display Tournament Rankings")
             table.add_row("8", "Back to Main Menu")
             self.console.print(table)
 
@@ -36,9 +45,8 @@ class TournamentMenu:
                 case "2":
                     self.tournament_controller.list_tournaments()
                 case "3":
-                    self.round_controller.set_tournament(
-                        self.tournament_controller.select_tournament()
-                    )
+                    selected_tournament = self.tournament_controller.select_tournament()
+                    self.round_controller.set_tournament(selected_tournament)
                 case "4":
                     self.round_controller.create_round()
                 case "5":

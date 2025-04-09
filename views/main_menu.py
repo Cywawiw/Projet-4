@@ -1,8 +1,3 @@
-"""
-Main menu of the chess tournament management application.
-"""
-
-
 from rich.console import Console
 from rich.table import Table
 
