@@ -1,5 +1,0 @@
-[flake8]
-max-line-length = 119
-exclude = .venv, __pycache__, migrations, data,.git,env,build,dist
-format = html
-output-file = flake8_rapport/index.html
